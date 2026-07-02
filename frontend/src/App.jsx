@@ -1,16 +1,17 @@
 // App.jsx
-// Step 1 goal: prove the pipeline works end to end.
-// Backend (Express) -> TMDB -> our /api/movies route -> this component.
-// No swiping yet - that's Step 2, once we know data is flowing correctly.
+// Step 2 goal: swiping actually works and we track what the user liked.
+// Still no backend/session awareness of likes yet - that's Step 3,
+// once swiping itself feels good.
 
 import { useEffect, useState } from "react";
-import MovieCard from "./MovieCard.jsx";
+import SwipeDeck from "./SwipeDeck.jsx";
 import "./App.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 function App() {
   const [movies, setMovies] = useState([]);
+  const [likedMovies, setLikedMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -31,18 +32,34 @@ function App() {
     fetchMovies();
   }, []);
 
+  function handleDecision(decision, movie) {
+    if (decision === "liked") {
+      setLikedMovies((prev) => [...prev, movie]);
+    }
+    // Remove the decided card from the deck (whichever way it went)
+    setMovies((prev) => prev.filter((m) => m.id !== movie.id));
+  }
+
   if (loading) return <p className="status-message">Loading movies…</p>;
   if (error) return <p className="status-message status-message--error">Error: {error}</p>;
 
   return (
     <div className="app">
       <h1>🎬 Movie Swiper</h1>
-      <p className="subtitle">Step 1: movies loaded from our own backend, which talks to TMDB.</p>
-      <div className="movie-list">
-        {movies.map((movie) => (
-          <MovieCard key={movie.id} movie={movie} />
-        ))}
-      </div>
+      <p className="subtitle">Step 2: swipe right to like, left to skip.</p>
+
+      <SwipeDeck movies={movies} onDecision={handleDecision} />
+
+      {likedMovies.length > 0 && (
+        <div className="liked-summary">
+          <h3>You liked ({likedMovies.length}):</h3>
+          <ul>
+            {likedMovies.map((m) => (
+              <li key={m.id}>{m.title}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
